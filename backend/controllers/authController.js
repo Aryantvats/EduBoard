@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import User from "../models/User.model.js";
 import jwt from "jsonwebtoken";
+import User from "../models/User.model.js";
 import Student from "../models/Student.model.js";
 
 const generateToken = (userId) => {
@@ -11,6 +11,9 @@ const generateToken = (userId) => {
   );
 };
 
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
 
 export const registerUser = async (req, res) => {
   try {
@@ -20,6 +23,27 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Email and password are required",
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    if (role && !["admin", "student"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role",
       });
     }
 
@@ -54,7 +78,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -63,6 +86,13 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Email and password are required",
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
       });
     }
 
@@ -97,8 +127,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-
-
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -112,7 +140,7 @@ export const getMe = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      user
+      user,
     });
   } catch (error) {
     res.status(500).json({
@@ -121,8 +149,6 @@ export const getMe = async (req, res) => {
     });
   }
 };
-
-
 
 export const changePassword = async (req, res) => {
   try {
